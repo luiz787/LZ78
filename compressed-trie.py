@@ -1,6 +1,7 @@
 import re
 import sys
 import os
+import struct
 
 import argparse
 
@@ -113,7 +114,7 @@ class CompressedTrie:
 
 def compress(str):
     str += "$"
-    output = ""
+    output_bytes = b""
 
     trie = CompressedTrie()
     val = 0
@@ -127,51 +128,21 @@ def compress(str):
             continue
         else:
             trie.insert(curr_window, index)
-            str_append = "({},{})".format(val, curr_window[-1])
-            output += str_append
+
+            val_bytes = val.to_bytes(3, byteorder='big')
+
+            output_bytes += val_bytes
+            output_bytes += ord(curr_window[-1]).to_bytes(1, byteorder='big')
 
             curr_window = ""
             index += 1
             val = 0
-    return output
-
-
-def decompress(str):
-    output = ""
-    storage = dict()
-    index = 1
-
-    current_token = ""
-    for char in str:
-        if char == "(":
-            current_token += "("
-        elif char != ")":
-            current_token += char
-            continue
-        else:
-            current_token += ")"
-            m = re.match(r"^\((?P<index>\d+),(?P<char>.+)\)$",
-                         current_token).groupdict()
-
-            try:
-                block = storage[int(m['index'])]
-            except KeyError:
-                block = ""
-            output += block + m['char']
-
-            storage[index] = block + m['char']
-            current_token = ""
-            index += 1
-    return output[:-1]
+    return output_bytes
 
 
 def get_filename_no_extension(filename):
     basename = os.path.basename(filename)
     return os.path.splitext(basename)[0]
-
-
-def read_file_as_string(path):
-    pass
 
 
 def handle_compression(args):
@@ -186,7 +157,7 @@ def handle_compression(args):
 
     data_compressed = compress(data)
 
-    with open(output_filename, 'w') as output_file:
+    with open(output_filename, 'wb') as output_file:
         output_file.write(data_compressed)
 
 
@@ -198,13 +169,40 @@ def handle_decompression(args):
     else:
         output_filename = args.output
 
-    with open(input_filename, 'r') as input_file:
-        data = input_file.read().replace('\n', '')
-
-    data_decompressed = decompress(data)
+    decompressed_data = decompress(args)
 
     with open(output_filename, 'w') as output_file:
-        output_file.write(data_decompressed)
+        output_file.write(decompressed_data)
+
+
+def decompress(args):
+    input_filename = args.decompress
+    output = ""
+    storage = dict()
+    index = 1
+
+    with open(input_filename, 'rb') as input_file:
+        while True:
+            word = input_file.read(4)
+            if not word:
+                break
+
+            bytes_number = word[:3]
+            byte_char = word[-1]
+
+            idx = int.from_bytes(bytes_number, byteorder='big')
+            character = chr(byte_char)
+
+            try:
+                block = storage[idx]
+            except KeyError:
+                block = ""
+            output += block + character
+
+            storage[index] = block + character
+            index += 1
+
+    return output[:-1]
 
 
 def main():

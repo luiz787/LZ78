@@ -5,10 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Debug Compress",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "compressed-trie.py",
+            "args": ["--compress", "test.txt", "--output", "debug.z78"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Debug Decompress",
+            "type": "python",
+            "request": "launch",
+            "program": "compressed-trie.py",
+            "args": ["--decompress", "debug.z78"],
             "console": "integratedTerminal"
         }
     ]
