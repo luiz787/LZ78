@@ -112,31 +112,41 @@ class CompressedTrie:
         return len(self.longest_common_prefix(str1, str2))
 
 
-def compress(str):
-    str += "$"
+def compress(string):
     output_bytes = b""
 
     trie = CompressedTrie()
     val = 0
 
+    inserted_last = False
+
     curr_window = ""
     index = 1
-    for char in str:
+    for char in string:
         curr_window += char
         if trie.contains(curr_window):
             val = trie.search(curr_window)
-            continue
+            inserted_last = False
         else:
             trie.insert(curr_window, index)
 
             val_bytes = val.to_bytes(3, byteorder='big')
 
             output_bytes += val_bytes
-            output_bytes += ord(curr_window[-1]).to_bytes(1, byteorder='big')
+
+            curr_bytes = curr_window[-1].encode('utf-8')
+            # pad with zeroes to guarantee 2 byte width
+            curr_bytes = curr_bytes.rjust(2, b'\x00')
+            output_bytes += curr_bytes
 
             curr_window = ""
             index += 1
             val = 0
+            inserted_last = True
+
+    if not inserted_last:
+        output_bytes += val.to_bytes(3, byteorder='big')
+
     return output_bytes
 
 
@@ -183,15 +193,17 @@ def decompress(args):
 
     with open(input_filename, 'rb') as input_file:
         while True:
-            word = input_file.read(4)
+            # the compression algorithm uses 3 bytes for the index and up to 2 bytes for the character
+            word = input_file.read(5)
             if not word:
                 break
 
             bytes_number = word[:3]
-            byte_char = word[-1]
+            byte_char = word[3:]
 
             idx = int.from_bytes(bytes_number, byteorder='big')
-            character = chr(byte_char)
+            # remove null byte if needed
+            character = (byte_char.lstrip(b'\x00')).decode('utf-8')
 
             try:
                 block = storage[idx]
@@ -202,7 +214,7 @@ def decompress(args):
             storage[index] = block + character
             index += 1
 
-    return output[:-1]
+    return output
 
 
 def main():
