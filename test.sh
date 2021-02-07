@@ -1,7 +1,7 @@
 INPUT_FILENAME=$1
 
-python3.9 compressed-trie.py --compress $INPUT_FILENAME --output compressed.z78
-python3.9 compressed-trie.py --decompress compressed.z78 --output decompressed.txt
+python3.9 src/main.py --compress $INPUT_FILENAME --output compressed.z78
+python3.9 src/main.py --decompress compressed.z78 --output decompressed.txt
 
 diff $INPUT_FILENAME decompressed.txt && echo "Test passed" || echo "Test failed."
 
