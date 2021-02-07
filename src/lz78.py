@@ -1,4 +1,4 @@
-from common import get_filename_no_extension, CHAR_SIZE, NUMBER_SIZE, BLOCK_SIZE
+from common import get_filename_no_extension, NUMBER_SIZE
 import utf8_utils
 from compressed_trie import CompressedTrie
 
@@ -13,29 +13,9 @@ def handle_compression(args):
     with open(input_filename, 'r') as input_file:
         data = input_file.read()
 
-    validate_compression_input(data)
-
     data_compressed = compress(data)
-
     with open(output_filename, 'wb') as output_file:
         output_file.write(data_compressed)
-
-
-def validate_compression_input(data):
-    bom = b'\xef\xbb\xbf'
-    if data[0].encode('utf-8') == bom:
-        # ignore bom (byte-order-mark)
-        data = data[1:]
-
-    for char in data:
-        if len(char.encode('utf-8')) > CHAR_SIZE:
-            print(char.encode('utf-8'))
-            print("Index: {}".format(data.index(char)))
-            message = """
-The program only supports characters that can be encoded with two bytes, \
-however the file contains the character {}, which is {} bytes long""".format(char, len(char.encode('utf-8')))
-            print(message)
-            raise Exception(message)
 
 
 def compress(string):
@@ -62,9 +42,6 @@ def compress(string):
             output_bytes += parent_index_bytes
 
             current_window_encoded = curr_window[-1].encode('utf-8')
-            # pad with zeroes to guarantee 2 byte width
-            # current_window_encoded = current_window_encoded.rjust(
-            #    CHAR_SIZE, b'\x00')
             output_bytes += current_window_encoded
 
             curr_window = ""
