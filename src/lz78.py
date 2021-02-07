@@ -1,4 +1,4 @@
-from common import get_filename_no_extension
+from common import get_filename_no_extension, CHAR_SIZE, NUMBER_SIZE, BLOCK_SIZE
 from compressed_trie import CompressedTrie
 
 
@@ -21,8 +21,15 @@ def handle_compression(args):
 
 
 def validate_compression_input(data):
+    bom = b'\xef\xbb\xbf'
+    if data[0].encode('utf-8') == bom:
+        # ignore bom (byte-order-mark)
+        data = data[1:]
+
     for char in data:
-        if len(char.encode('utf-8')) > 2:
+        if len(char.encode('utf-8')) > CHAR_SIZE:
+            print(char.encode('utf-8'))
+            print("Index: {}".format(data.index(char)))
             message = """
 The program only supports characters that can be encoded with two bytes, \
 however the file contains the character {}, which is {} bytes long""".format(char, len(char.encode('utf-8')))
@@ -48,13 +55,15 @@ def compress(string):
         else:
             trie.insert(curr_window, index)
 
-            parent_index_bytes = parent_index.to_bytes(3, byteorder='big')
+            parent_index_bytes = parent_index.to_bytes(
+                NUMBER_SIZE, byteorder='big')
 
             output_bytes += parent_index_bytes
 
             current_window_encoded = curr_window[-1].encode('utf-8')
             # pad with zeroes to guarantee 2 byte width
-            current_window_encoded = current_window_encoded.rjust(2, b'\x00')
+            current_window_encoded = current_window_encoded.rjust(
+                CHAR_SIZE, b'\x00')
             output_bytes += current_window_encoded
 
             curr_window = ""
@@ -92,15 +101,15 @@ def decompress(raw_bytes):
     # because in decompression the key is the index, and not the string, so using a trie would not be appropriate
     dictionary = dict()
     index = 1
-    for i in range(0, len(raw_bytes), 5):
+    for i in range(0, len(raw_bytes), BLOCK_SIZE):
 
-        # the compression algorithm uses 3 bytes for the index and up to 2 bytes for the character, so we take steps of 5 bytes
-        word = raw_bytes[i:i+5]
+        # the compression algorithm uses 3 bytes for the index and up to 3 bytes for the character, so we take steps of 6 bytes
+        word = raw_bytes[i:i+BLOCK_SIZE]
         if not word:
             break
 
-        bytes_number = word[:3]
-        byte_char = word[3:]
+        bytes_number = word[:NUMBER_SIZE]
+        byte_char = word[NUMBER_SIZE:]
 
         idx = int.from_bytes(bytes_number, byteorder='big')
         # remove left padding if needed

@@ -1,5 +1,9 @@
 import os
 
+CHAR_SIZE = 3
+NUMBER_SIZE = 3
+BLOCK_SIZE = CHAR_SIZE + NUMBER_SIZE
+
 
 def longest_common_prefix(str1, str2):
     prefix = ""
