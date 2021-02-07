@@ -1,6 +1,29 @@
-import os
-
+from common import get_filename_no_extension
 from compressed_trie import CompressedTrie
+
+
+def handle_compression(args):
+    input_filename = args.compress
+    if not args.output:
+        output_filename = get_filename_no_extension(
+            input_filename) + ".z78"
+    else:
+        output_filename = args.output
+    with open(input_filename, 'r') as input_file:
+        data = input_file.read()
+
+    for char in data:
+        if len(char.encode('utf-8')) > 2:
+            message = """
+The program only supports characters that can be encoded with two bytes, \
+however the file contains the character {}, which is {} bytes long""".format(char, len(char.encode('utf-8')))
+            print(message)
+            raise Exception(message)
+
+    data_compressed = compress(data)
+
+    with open(output_filename, 'wb') as output_file:
+        output_file.write(data_compressed)
 
 
 def compress(string):
@@ -41,35 +64,6 @@ def compress(string):
     return output_bytes
 
 
-def get_filename_no_extension(filename):
-    basename = os.path.basename(filename)
-    return os.path.splitext(basename)[0]
-
-
-def handle_compression(args):
-    input_filename = args.compress
-    if not args.output:
-        output_filename = get_filename_no_extension(
-            input_filename) + ".z78"
-    else:
-        output_filename = args.output
-    with open(input_filename, 'r') as input_file:
-        data = input_file.read()
-
-    for char in data:
-        if len(char.encode('utf-8')) > 2:
-            message = """
-The program only supports characters that can be encoded with two bytes, \
-but the file contains the character {}, which is {} bytes long""".format(char, len(char.encode('utf-8')))
-            print(message)
-            raise Exception(message)
-
-    data_compressed = compress(data)
-
-    with open(output_filename, 'wb') as output_file:
-        output_file.write(data_compressed)
-
-
 def handle_decompression(args):
     input_filename = args.decompress
     if not args.output:
@@ -102,7 +96,7 @@ def decompress(args):
 
             idx = int.from_bytes(bytes_number, byteorder='big')
             # remove null byte if needed
-            character = (byte_char.lstrip(b'\x00')).decode('utf-8')
+            character = byte_char.lstrip(b'\x00').decode('utf-8')
 
             try:
                 block = storage[idx]

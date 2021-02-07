@@ -51,7 +51,7 @@ class CompressedTrie:
 
         if child_with_same_first_char is None:
             new_node = Node(string, node.val + 1, index)
-            node.children[string] = new_node
+            node.children[new_node.key] = new_node
             return
 
         child_key = child_with_same_first_char[0]
@@ -61,17 +61,5 @@ class CompressedTrie:
             str_without_prefix = string[len(common_prefix):]
             return self.insert_internal(child_node, str_without_prefix, index)
         else:
-            # TODO: extract method
-            q = Node(common_prefix, node.val + 1, None)
-            node.children[common_prefix] = q
-
-            child_node = node.children[child_key]
-            del node.children[child_key]
-            child_node.key = child_key[len(common_prefix):]
-            child_node.val = q.val + 1
-
-            q.children[child_node.key] = child_node
-
-            r = Node(string[len(common_prefix):], q.val + 1, index)
-            q.children[string[len(common_prefix):]] = r
+            node.split(string, index, common_prefix, child_key)
             return
