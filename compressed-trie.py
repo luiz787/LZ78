@@ -73,8 +73,7 @@ class CompressedTrie:
             str_without_prefix = str[len(common_prefix):]
             return self.insert_internal(child_node, str_without_prefix, index)
         else:
-            # TODO: figure out what the index of the node q should be.
-            q = Node(common_prefix, node.val + 1, index)
+            q = Node(common_prefix, node.val + 1, None)
             node.children[common_prefix] = q
 
             child_node = node.children[child_key]
@@ -164,6 +163,14 @@ def handle_compression(args):
         output_filename = args.output
     with open(input_filename, 'r') as input_file:
         data = input_file.read()
+
+    for char in data:
+        if len(char.encode('utf-8')) > 2:
+            message = """
+The program only supports characters that can be encoded with two bytes, \
+but the file contains the character {}, which is {} bytes long""".format(char, len(char.encode('utf-8')))
+            print(message)
+            raise Exception(message)
 
     data_compressed = compress(data)
 
