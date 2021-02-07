@@ -1,4 +1,5 @@
 from common import get_filename_no_extension, CHAR_SIZE, NUMBER_SIZE, BLOCK_SIZE
+import utf8_utils
 from compressed_trie import CompressedTrie
 
 
@@ -62,8 +63,8 @@ def compress(string):
 
             current_window_encoded = curr_window[-1].encode('utf-8')
             # pad with zeroes to guarantee 2 byte width
-            current_window_encoded = current_window_encoded.rjust(
-                CHAR_SIZE, b'\x00')
+            # current_window_encoded = current_window_encoded.rjust(
+            #    CHAR_SIZE, b'\x00')
             output_bytes += current_window_encoded
 
             curr_window = ""
@@ -101,20 +102,19 @@ def decompress(raw_bytes):
     # because in decompression the key is the index, and not the string, so using a trie would not be appropriate
     dictionary = dict()
     index = 1
-    for i in range(0, len(raw_bytes), BLOCK_SIZE):
-
-        # the compression algorithm uses 3 bytes for the index and up to 3 bytes for the character, so we take steps of 6 bytes
-        word = raw_bytes[i:i+BLOCK_SIZE]
-        if not word:
+    i = 0
+    while i < len(raw_bytes):
+        # the compression algorithm uses 3 bytes for the index
+        index_bytes = raw_bytes[i:i+NUMBER_SIZE]
+        if not index_bytes:
             break
 
-        bytes_number = word[:NUMBER_SIZE]
-        byte_char = word[NUMBER_SIZE:]
+        # a utf-8 character can take up to 4 bytes
+        start = i + NUMBER_SIZE
+        next_possible_block = raw_bytes[start:start+4]
+        (character, char_length) = utf8_utils.parse_block(next_possible_block)
 
-        idx = int.from_bytes(bytes_number, byteorder='big')
-        # remove left padding if needed
-        character = byte_char.lstrip(b'\x00').decode('utf-8')
-
+        idx = int.from_bytes(index_bytes, byteorder='big')
         try:
             block = dictionary[idx]
         except KeyError:
@@ -122,6 +122,8 @@ def decompress(raw_bytes):
         output += block + character
 
         dictionary[index] = block + character
+
         index += 1
+        i += (NUMBER_SIZE + char_length)
 
     return output
