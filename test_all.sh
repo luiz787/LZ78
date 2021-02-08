@@ -1,6 +1,6 @@
 #!/bin/bash
 for filename in dataset/*.txt; do
-    echo $filename
-    ./test.sh "$filename" > /dev/null && echo "ok" || echo "fail"
+    # echo $filename
+    ./test.sh "$filename"
     rm compressed.z78 decompressed.txt
 done
