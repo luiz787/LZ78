@@ -1,7 +1,6 @@
 class Node:
-    def __init__(self, key, val, index):
+    def __init__(self, key, index):
         self.key = key
-        self.val = val
         self.index = index
         self.children = dict()
 
@@ -17,7 +16,7 @@ class Node:
             return None
 
     def split(self, string, index, common_prefix, child_key):
-        new_parent = Node(common_prefix, self.val + 1, None)
+        new_parent = Node(common_prefix, None)
         self.children[common_prefix] = new_parent
 
         child_node = self.children[child_key]
@@ -25,9 +24,8 @@ class Node:
 
         # child key becomes only the non-common part of the original key
         child_node.key = child_key[len(common_prefix):]
-        child_node.val = new_parent.val + 1
 
         new_parent.children[child_node.key] = child_node
 
-        r = Node(string[len(common_prefix):], new_parent.val + 1, index)
+        r = Node(string[len(common_prefix):], index)
         new_parent.children[r.key] = r

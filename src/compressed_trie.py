@@ -4,7 +4,7 @@ import common as string_utils
 
 class CompressedTrie:
     def __init__(self):
-        self.root = Node("", -1, 0)
+        self.root = Node("", 0)
 
     def search(self, key):
         pre = ""
@@ -50,7 +50,7 @@ class CompressedTrie:
         child_with_same_first_char = node.get_child_by_first_char(string)
 
         if child_with_same_first_char is None:
-            new_node = Node(string, node.val + 1, index)
+            new_node = Node(string, index)
             node.children[new_node.key] = new_node
             return
 
